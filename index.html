@@ -90,22 +90,7 @@ setInterval(()=>{
   }
 },1000);
 
-// VELOCIDADE
-let nivel = null;
-
-function classificar(mbps){
-  if (mbps <= 1) return 1;
-  if (mbps <= 2) return 2;
-  if (mbps <= 4) return 3;
-  if (mbps <= 8) return 4;
-  if (mbps <= 16) return 5;
-  if (mbps <= 32) return 6;
-  if (mbps <= 64) return 7;
-  if (mbps <= 128) return 8;
-  if (mbps <= 256) return 9;
-  return 10;
-}
-
+// VELOCIDADE (INICIA AUTOMÁTICO)
 let velocidadePromise = new Promise((resolve)=>{
   const start = Date.now();
   const img = new Image();
@@ -122,22 +107,35 @@ let velocidadePromise = new Promise((resolve)=>{
   img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg?"+Math.random();
 });
 
+// CLASSIFICAR
+function classificar(mbps){
+  if (mbps <= 1) return 1;
+  if (mbps <= 2) return 2;
+  if (mbps <= 4) return 3;
+  if (mbps <= 8) return 4;
+  if (mbps <= 16) return 5;
+  if (mbps <= 32) return 6;
+  if (mbps <= 64) return 7;
+  if (mbps <= 128) return 8;
+  if (mbps <= 256) return 9;
+  return 10;
+}
+
 // CLIQUE
 document.getElementById("btnShopee").addEventListener("click", async function(e){
   e.preventDefault();
 
   this.innerText = "Carregando...";
 
-  // SALVA TEMPO IMEDIATO
   let tempoClick = tempoLabel;
 
-  // ESPERA VELOCIDADE TERMINAR (OBRIGATÓRIO)
+  // AGORA SEMPRE ESPERA A VELOCIDADE
   let speed = await velocidadePromise;
 
   let tagVelocidade;
 
   if(speed){
-    nivel = classificar(speed);
+    let nivel = classificar(speed);
     tagVelocidade = "N"+nivel;
 
     track("Velocidade_N"+nivel);
