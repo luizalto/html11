@@ -96,19 +96,19 @@ function classificar(mbps){
   return 10
 }
 
-// ================= VELOCIDADE (INICIA AO ABRIR) =================
-let velocidade = null
-let terminou = false
+// ================= VELOCIDADE INDEPENDENTE =================
+let velocidade=null
 
 async function medirVelocidade(){
 
-  const controller=new AbortController()
-  setTimeout(()=>controller.abort(),1000)
-
-  let totalBytes=0
-  const start=performance.now()
-
   try{
+
+    const controller=new AbortController()
+    setTimeout(()=>controller.abort(),1000)
+
+    let totalBytes=0
+    const start=performance.now()
+
     const res=await fetch("https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js",{
       signal:controller.signal,
       cache:"no-store"
@@ -122,46 +122,36 @@ async function medirVelocidade(){
       totalBytes+=value.length
     }
 
-  }catch(e){}
+    const duration=(performance.now()-start)/1000
 
-  const duration=(performance.now()-start)/1000
+    if(totalBytes>0){
+      velocidade=(totalBytes*8/duration)/(1024*1024)
 
-  if(totalBytes>0){
-    velocidade=(totalBytes*8/duration)/(1024*1024)
+      const nivel=classificar(velocidade)
+
+      track("Velocidade_N"+nivel)
+      track("VelocidadeInternet",{mbps:velocidade.toFixed(2),nivel})
+    }
+
+  }catch(e){
+    track("Velocidade_Erro")
   }
-
-  terminou = true
 }
 
 // DISPARA IMEDIATO AO ENTRAR
 medirVelocidade()
 
 // CLIQUE
-document.getElementById("btnShopee").addEventListener("click", async function(){
-
-  this.innerText="Carregando..."
+document.getElementById("btnShopee").addEventListener("click", function(){
 
   const tempoClick=tempoLabel
-
-  // ESPERA SE AINDA NÃO TERMINOU
-  let wait=0
-  while(!terminou && wait<1000){
-    await new Promise(r=>setTimeout(r,50))
-    wait+=50
-  }
 
   let tag
 
   if(velocidade){
-    const nivel=classificar(velocidade)
-    tag="N"+nivel
-
-    track("Velocidade_N"+nivel)
-    track("VelocidadeInternet",{mbps:velocidade.toFixed(2),nivel})
-
+    tag="N"+classificar(velocidade)
   }else{
-    tag="NE"
-    track("Velocidade_Erro")
+    tag="N5" // fallback inteligente
   }
 
   track("ClickShopee")
