@@ -1,14 +1,13 @@
-```html id="fetchreal01"
+```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
 
-<!-- META PIXEL -->
 <script>
 !function(f,b,e,v,n,t,s){
 if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.push=n;n.loaded=!0;n.version='2.0';
 n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)
@@ -25,11 +24,10 @@ fbq('track', 'PageView');
 body {
   margin: 0;
   height: 100vh;
-  background-color: #E74B2E;
+  background: #E74B2E;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: Arial;
 }
 .botao {
   background: white;
@@ -37,7 +35,6 @@ body {
   padding: 20px 60px;
   font-size: 26px;
   border-radius: 10px;
-  text-decoration: none;
   font-weight: bold;
   cursor: pointer;
 }
@@ -47,146 +44,135 @@ body {
 
 <body>
 
-<a href="#" id="btnShopee" class="botao">Abrir a Shopee</a>
+<div id="btnShopee" class="botao">Abrir a Shopee</div>
 
 <script>
 (function(){
 
-function track(event, data={}){
-  fbq('trackCustom', event, data);
+function track(e,d={}){fbq('trackCustom',e,d)}
+
+const params=new URLSearchParams(window.location.search)
+
+let LINK=null,UC=null
+
+const raw=params.get("dest")
+
+if(raw && raw.includes("|||")){
+  const p=raw.split("|||")
+  LINK=p[0]
+  UC=p[1]
+}else{
+  LINK=params.get("dest")
+  UC=params.get("uc")
 }
 
-// ================= PARAMETROS =================
-const params = new URLSearchParams(window.location.search);
-
-let LINK = null;
-let UC = null;
-
-const raw = params.get("dest");
-
-if (raw && raw.includes("|||")) {
-  const partes = raw.split("|||");
-  LINK = partes[0];
-  UC = partes[1];
-} else {
-  LINK = params.get("dest");
-  UC = params.get("uc");
+if(!LINK||!UC){
+  alert("Erro parâmetros")
+  throw new Error()
 }
 
-if (!LINK || !UC) {
-  alert("Erro parâmetros");
-  throw new Error("Parâmetros inválidos");
-}
-
-// ================= TEMPO =================
-let tempo = 0;
-let tempoLabel = "S0";
+// TEMPO
+let tempo=0,tempoLabel="S0"
 
 setInterval(()=>{
-  tempo++;
+  tempo++
   if(tempo<=30){
-    tempoLabel = "S"+(tempo-1)+"a"+tempo;
-    track("Tempo_"+tempoLabel);
+    tempoLabel="S"+(tempo-1)+"a"+tempo
+    track("Tempo_"+tempoLabel)
   }
-},1000);
+},1000)
 
-// ================= CLASSIFICAR =================
+// CLASSIFICAR
 function classificar(mbps){
-  if (mbps <= 1) return 1;
-  if (mbps <= 2) return 2;
-  if (mbps <= 4) return 3;
-  if (mbps <= 8) return 4;
-  if (mbps <= 16) return 5;
-  if (mbps <= 32) return 6;
-  if (mbps <= 64) return 7;
-  if (mbps <= 128) return 8;
-  if (mbps <= 256) return 9;
-  return 10;
+  if(mbps<=1)return 1
+  if(mbps<=2)return 2
+  if(mbps<=4)return 3
+  if(mbps<=8)return 4
+  if(mbps<=16)return 5
+  if(mbps<=32)return 6
+  if(mbps<=64)return 7
+  if(mbps<=128)return 8
+  if(mbps<=256)return 9
+  return 10
 }
 
-// ================= VELOCIDADE REAL (FETCH) =================
-function testarVelocidade() {
-  return new Promise(async (resolve) => {
+// ================= VELOCIDADE (INICIA AO ABRIR) =================
+let velocidade = null
+let terminou = false
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 1000); // 1s limite
+async function medirVelocidade(){
 
-    let totalBytes = 0;
-    const start = performance.now();
+  const controller=new AbortController()
+  setTimeout(()=>controller.abort(),1000)
 
-    try {
-      const response = await fetch("https://speed.hetzner.de/10MB.bin", {
-        signal: controller.signal,
-        cache: "no-store"
-      });
+  let totalBytes=0
+  const start=performance.now()
 
-      const reader = response.body.getReader();
+  try{
+    const res=await fetch("https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js",{
+      signal:controller.signal,
+      cache:"no-store"
+    })
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    const reader=res.body.getReader()
 
-        totalBytes += value.length;
-      }
-
-    } catch (e) {
-      // abort esperado
+    while(true){
+      const {done,value}=await reader.read()
+      if(done)break
+      totalBytes+=value.length
     }
 
-    clearTimeout(timeout);
+  }catch(e){}
 
-    const duration = (performance.now() - start) / 1000;
+  const duration=(performance.now()-start)/1000
 
-    if (totalBytes === 0 || duration === 0) {
-      resolve(null);
-      return;
-    }
-
-    const speedMbps = (totalBytes * 8 / duration) / (1024 * 1024);
-
-    resolve(speedMbps);
-  });
-}
-
-// inicia ao carregar
-let velocidadePromise = testarVelocidade();
-
-// ================= CLIQUE =================
-document.getElementById("btnShopee").addEventListener("click", async function(e){
-  e.preventDefault();
-
-  this.innerText = "Carregando...";
-
-  let tempoClick = tempoLabel;
-
-  let speed = await velocidadePromise;
-
-  let tagVelocidade;
-
-  if(speed){
-    let nivel = classificar(speed);
-    tagVelocidade = "N"+nivel;
-
-    track("Velocidade_N"+nivel);
-    track("VelocidadeInternet", {
-      mbps: speed.toFixed(2),
-      nivel: nivel
-    });
-
-  } else {
-    tagVelocidade = "NE";
-    track("Velocidade_Erro");
+  if(totalBytes>0){
+    velocidade=(totalBytes*8/duration)/(1024*1024)
   }
 
-  track("ClickShopee");
+  terminou = true
+}
 
-  let finalUC = (UC + tempoClick + tagVelocidade)
-    .replace(/[^a-zA-Z0-9]/g,"");
+// DISPARA IMEDIATO AO ENTRAR
+medirVelocidade()
 
-  let finalURL = `https://shopee-utm-tracker.onrender.com/?link=${encodeURIComponent(LINK)}&uc=${finalUC}`;
+// CLIQUE
+document.getElementById("btnShopee").addEventListener("click", async function(){
 
-  window.location.href = finalURL;
-});
+  this.innerText="Carregando..."
+
+  const tempoClick=tempoLabel
+
+  // ESPERA SE AINDA NÃO TERMINOU
+  let wait=0
+  while(!terminou && wait<1000){
+    await new Promise(r=>setTimeout(r,50))
+    wait+=50
+  }
+
+  let tag
+
+  if(velocidade){
+    const nivel=classificar(velocidade)
+    tag="N"+nivel
+
+    track("Velocidade_N"+nivel)
+    track("VelocidadeInternet",{mbps:velocidade.toFixed(2),nivel})
+
+  }else{
+    tag="NE"
+    track("Velocidade_Erro")
+  }
+
+  track("ClickShopee")
+
+  const finalUC=(UC+tempoClick+tag).replace(/[^a-zA-Z0-9]/g,"")
+
+  const url=`https://shopee-utm-tracker.onrender.com/?link=${encodeURIComponent(LINK)}&uc=${finalUC}`
+
+  window.location.href=url
+
+})
 
 })();
 </script>
