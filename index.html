@@ -83,15 +83,15 @@ setInterval(()=>{
 
 // ================= CLASSIFICAR =================
 function classificar(mbps){
-  if(mbps<=1)return 1
-  if(mbps<=2)return 2
-  if(mbps<=4)return 3
-  if(mbps<=8)return 4
-  if(mbps<=16)return 5
-  if(mbps<=32)return 6
-  if(mbps<=64)return 7
-  if(mbps<=128)return 8
-  if(mbps<=256)return 9
+  if(mbps <= 0.5) return 1
+  if(mbps <= 1) return 2
+  if(mbps <= 2) return 3
+  if(mbps <= 4) return 4
+  if(mbps <= 6) return 5
+  if(mbps <= 10) return 6
+  if(mbps <= 15) return 7
+  if(mbps <= 20) return 8
+  if(mbps <= 25) return 9
   return 10
 }
 
