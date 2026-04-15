@@ -86,19 +86,15 @@ const tempoInterval=setInterval(()=>{
 // ================= CLASSIFICAR =================
 function classificar(mbps){
   if(mbps <= 0.5) return 1
-  if(mbps <= 0.8) return 2
-  if(mbps <= 1) return 3
-  if(mbps <= 2) return 4
-  if(mbps <= 4) return 5
-  if(mbps <= 6) return 6
-  if(mbps <= 10) return 7
-  if(mbps <= 15) return 8
-  if(mbps <= 20) return 9
-  if(mbps <= 30) return 11
-  if(mbps <= 40) return 12
-  if(mbps <= 50) return 13
-  if(mbps <= 60) return 14
-  return 15
+  if(mbps <= 1) return 2
+  if(mbps <= 2) return 3
+  if(mbps <= 4) return 4
+  if(mbps <= 6) return 5
+  if(mbps <= 10) return 6
+  if(mbps <= 15) return 7
+  if(mbps <= 20) return 8
+  if(mbps <= 25) return 9
+  return 10
 }
 
 // ================= VELOCIDADE (ORIGINAL) =================
@@ -107,7 +103,7 @@ let velocidade=null
 async function medirVelocidade(){
   try{
     const controller=new AbortController()
-    setTimeout(()=>controller.abort(),1000) // ORIGINAL
+    setTimeout(()=>controller.abort(),1000)
 
     let totalBytes=0
     const start=performance.now()
@@ -143,37 +139,51 @@ async function medirVelocidade(){
 
 medirVelocidade()
 
-// ================= CLIQUE =================
+// ================= CLIQUE (IGUAL AO REFERÊNCIA) =================
 document.getElementById("btnShopee").addEventListener("click",function(e){
 
-  const rect=this.getBoundingClientRect()
+  const btn=this
+  btn.innerText="Redirecionando..."
+
+  const rect=btn.getBoundingClientRect()
   const x=e.clientX - rect.left
   const largura=rect.width
 
-  let lado
+  let pos
 
   const inicioCentro=largura*0.45
   const fimCentro=largura*0.55
 
   if(x < inicioCentro){
-    lado="L"
+    pos="Left"
   }else if(x > fimCentro){
-    lado="R"
+    pos="Right"
   }else{
-    lado="C"
+    pos="Center"
+  }
+
+  // EVENTO COM PARÂMETRO
+  fbq('trackCustom','ClickShopee',{position:pos})
+
+  // EVENTOS SEPARADOS (IGUAL REFERÊNCIA)
+  if(pos==="Left"){
+    fbq('trackCustom','ClickShopee_Left')
+  }else if(pos==="Center"){
+    fbq('trackCustom','ClickShopee_Center')
+  }else{
+    fbq('trackCustom','ClickShopee_Right')
   }
 
   const tempoClick=tempoLabel
 
   let tag
-
   if(velocidade){
     tag="N"+classificar(velocidade)
   }else{
     tag="N5"
   }
 
-  track("ClickShopee",{lado})
+  const lado = pos === "Left" ? "L" : pos === "Right" ? "R" : "C"
 
   const finalUC=(UC+tempoClick+tag+lado).replace(/[^a-zA-Z0-9]/g,"")
 
