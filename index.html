@@ -3,15 +3,6 @@
 <html lang="pt-br">
 <head>
 
-<!-- CLARITY -->
-<script>
-(function(c,l,a,r,i,t,y){
-c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-})(window, document, "clarity", "script", "wbckaw2wfg");
-</script>
-
 <!-- META PIXEL -->
 <script>
 !function(f,b,e,v,n,t,s){
@@ -25,22 +16,6 @@ s.parentNode.insertBefore(t,s)
 
 fbq('init', '799819532599997');
 fbq('track', 'PageView');
-</script>
-
-<!-- PINTEREST -->
-<script>
-!function(e){
-if(!window.pintrk){
-window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};
-var n=window.pintrk;n.queue=[],n.version="3.0";
-var t=document.createElement("script");
-t.async=!0,t.src=e;
-var r=document.getElementsByTagName("script")[0];
-r.parentNode.insertBefore(t,r)}
-}("https://s.pinimg.com/ct/core.js");
-
-pintrk('load', '2613965302610');
-pintrk('page');
 </script>
 
 <meta charset="UTF-8">
@@ -77,84 +52,37 @@ body {
 <script>
 (function(){
 
-// ================= TRACK GLOBAL =================
-function trackAll(eventName, data = {}) {
-  fbq('trackCustom', eventName, data);
-  pintrk('track', eventName, data);
+// ================= TRACK =================
+function track(event, data={}){
+  fbq('trackCustom', event, data);
 }
 
-// ================= PARÂMETROS =================
+// ================= PARAM =================
 const params = new URLSearchParams(window.location.search);
 
-let LINK_SHOPEE = null;
-let UC = null;
+let LINK = params.get("dest");
+let UC = params.get("uc");
 
-const raw = params.get("dest");
-
-if (raw && raw.includes("|||")) {
-  const partes = raw.split("|||");
-  LINK_SHOPEE = partes[0];
-  UC = partes[1];
-}
-
-if (!LINK_SHOPEE) {
-  LINK_SHOPEE = params.get("dest");
-  UC = params.get("uc");
-}
-
-if (!LINK_SHOPEE || !UC) {
-  alert("Erro: link ou UC não informado.");
+if (!LINK || !UC) {
+  alert("Erro parâmetros");
   throw new Error("Parâmetros inválidos");
 }
 
 // ================= TEMPO =================
-let tempo=0, tempoLabel="", disparouS30=false;
-
-let tempoS0a1=false;
-let tempoS1a2=false;
-
-let evento01=false;
-let evento02=false;
-
-let clickRight=false;
-
-function tempoLoop(){
+let tempo=0, tempoLabel="S0";
+setInterval(()=>{
   tempo++;
-
   if(tempo<=30){
     tempoLabel="S"+(tempo-1)+"a"+tempo;
-    trackAll("Tempo_"+tempoLabel);
-  }else if(!disparouS30){
-    tempoLabel="S30";
-    trackAll("Tempo_S30");
-    disparouS30=true;
+    track("Tempo_"+tempoLabel);
   }
-
-  if(tempoLabel==="S0a1"){ tempoS0a1=true; checkEventos(); }
-  if(tempoLabel==="S1a2"){ tempoS1a2=true; checkEventos(); }
-}
-
-tempoLoop();
-setInterval(tempoLoop,1000);
-
-// ================= EVENTOS AVANÇADOS =================
-function checkEventos(){
-  if(clickRight && tempoS0a1 && !evento02){
-    trackAll('EVENTO02');
-    evento02=true;
-  }
-  if(clickRight && tempoS1a2 && !evento01){
-    trackAll('EVENTO01');
-    evento01=true;
-  }
-}
+},1000);
 
 // ================= VELOCIDADE =================
-let velocidadeMbps = null;
-let nivelVelocidade = null;
-let velocidadePronta = false;
+let nivel = null;
+let statusVelocidade = "NR"; // NR = não resolvido ainda
 
-function classificarVelocidade(mbps) {
+function classificar(mbps){
   if (mbps <= 1) return 1;
   if (mbps <= 2) return 2;
   if (mbps <= 4) return 3;
@@ -167,101 +95,74 @@ function classificarVelocidade(mbps) {
   return 10;
 }
 
-function testarVelocidade() {
-  return new Promise((resolve) => {
-    const image = new Image();
-    const startTime = Date.now();
-    const tamanhoBytes = 500000;
+function testarVelocidade(){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const start = Date.now();
+    const size = 500000;
 
-    image.onload = function () {
-      const duration = (Date.now() - startTime) / 1000;
-      const bitsLoaded = tamanhoBytes * 8;
-      const speedMbps = (bitsLoaded / duration / (1024 * 1024));
-      resolve(speedMbps);
+    img.onload = ()=>{
+      const duration = (Date.now()-start)/1000;
+      const speed = (size*8/duration)/(1024*1024);
+      resolve(speed);
     };
 
-    image.onerror = function () {
-      resolve(null);
-    };
+    img.onerror = ()=> resolve(null);
 
-    image.src = "https://via.placeholder.com/1000x1000.jpg?cache=" + Math.random();
+    img.src = "https://via.placeholder.com/1000x1000.jpg?"+Math.random();
   });
 }
 
-testarVelocidade().then(speed => {
-  if (speed) {
-    velocidadeMbps = speed;
-    nivelVelocidade = classificarVelocidade(speed);
+// inicia teste
+testarVelocidade().then(speed=>{
+  if(speed){
+    nivel = classificar(speed);
+    statusVelocidade = "OK";
+
+    track("Velocidade_N"+nivel);
+    track("VelocidadeInternet", {
+      mbps: speed.toFixed(2),
+      nivel: nivel
+    });
+
   } else {
-    nivelVelocidade = 0;
+    statusVelocidade = "ERRO";
+    track("Velocidade_Erro");
   }
-
-  velocidadePronta = true;
-
-  // EVENTOS DE VELOCIDADE
-  trackAll("VelocidadeInternet", {
-    mbps: speed ? speed.toFixed(2) : "0",
-    nivel: nivelVelocidade
-  });
-
-  trackAll("Velocidade_N" + nivelVelocidade);
 });
 
 // ================= CLIQUE =================
 document.getElementById("btnShopee").addEventListener("click", async function(e){
   e.preventDefault();
 
-  const btn = this;
-  btn.innerText = "Redirecionando...";
+  this.innerText = "Redirecionando...";
 
-  // espera até 1s pela velocidade
-  let espera = 0;
-  while(!velocidadePronta && espera < 1000){
-    await new Promise(r => setTimeout(r, 50));
-    espera += 50;
+  // espera até 800ms
+  let wait = 0;
+  while(statusVelocidade==="NR" && wait < 800){
+    await new Promise(r=>setTimeout(r,50));
+    wait+=50;
   }
 
-  if (nivelVelocidade === null) {
-    nivelVelocidade = 0;
+  let tagVelocidade;
+
+  if(statusVelocidade==="OK"){
+    tagVelocidade = "N"+nivel;
+  } 
+  else if(statusVelocidade==="ERRO"){
+    tagVelocidade = "NE";
+  } 
+  else {
+    tagVelocidade = "NR";
+    track("Velocidade_Rapido");
   }
 
-  const rect = btn.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const largura = rect.width;
+  track("ClickShopee");
 
-  let pos;
-  const inicioCentro = largura * 0.45;
-  const fimCentro = largura * 0.55;
-
-  if (x < inicioCentro) pos = "Left";
-  else if (x > fimCentro) pos = "Right";
-  else pos = "Center";
-
-  trackAll('ClickShopee', { position: pos, uc: UC });
-
-  if (pos === "Left") trackAll('ClickShopee_Left');
-  else if (pos === "Center") trackAll('ClickShopee_Center');
-  else trackAll('ClickShopee_Right');
-
-  if(pos === "Right"){
-    clickRight = true;
-    checkEventos();
-  }
-
-  fbq('track', 'InitiateCheckout', {
-    nivel_velocidade: nivelVelocidade
-  });
-
-  pintrk('track', 'checkout');
-
-  let tempoFinal = tempoLabel || "S0";
-
-  let finalUC = (UC + tempoFinal + "N" + nivelVelocidade)
+  let finalUC = (UC + tempoLabel + tagVelocidade)
     .replace(/[^a-zA-Z0-9]/g,"");
 
-  const link = encodeURIComponent(LINK_SHOPEE);
-
-  const finalURL = `https://shopee-utm-tracker.onrender.com/?link=${link}&pos=${pos}&uc=${finalUC}`;
+  let finalURL = `https://shopee-utm-tracker.onrender.com/?link=${encodeURIComponent(LINK)}&uc=${finalUC}`;
 
   window.location.href = finalURL;
 });
