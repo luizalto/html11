@@ -104,12 +104,12 @@ function classificar(mbps){
   return 10;
 }
 
-// ================= VELOCIDADE (5MB + 1s) =================
+// ================= VELOCIDADE (IMAGEM GRANDE + 1s) =================
 function testarVelocidade() {
   return new Promise((resolve) => {
 
     const start = Date.now();
-    const tamanhoTotal = 5000000; // 5MB
+    const tamanhoEstimado = 2000000; // ~2MB estimado
 
     const img = new Image();
     let terminou = false;
@@ -121,10 +121,10 @@ function testarVelocidade() {
 
         const duration = (Date.now() - start) / 1000;
 
-        // estimativa parcial (~50%)
-        const estimativa = tamanhoTotal * 0.5;
+        // assume ~50% carregado
+        const parcial = tamanhoEstimado * 0.5;
 
-        const speed = (estimativa * 8 / duration) / (1024 * 1024);
+        const speed = (parcial * 8 / duration) / (1024 * 1024);
 
         resolve(speed);
       }
@@ -136,7 +136,8 @@ function testarVelocidade() {
       terminou = true;
 
       const duration = (Date.now() - start) / 1000;
-      const speed = (tamanhoTotal * 8 / duration) / (1024 * 1024);
+
+      const speed = (tamanhoEstimado * 8 / duration) / (1024 * 1024);
 
       resolve(speed);
     };
@@ -148,7 +149,7 @@ function testarVelocidade() {
       }
     };
 
-    img.src = "https://speed.hetzner.de/5MB.bin?cache=" + Math.random();
+    img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg?cache=" + Math.random();
   });
 }
 
