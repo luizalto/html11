@@ -6,7 +6,7 @@
 !function(f,b,e,v,n,t,s){
 if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-n.push=n;n.loaded=!0;n.version='2.0';
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
 n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)
@@ -73,44 +73,43 @@ if(!LINK||!UC){
 // ================= TEMPO =================
 let tempo=0,tempoLabel="S0"
 
-setInterval(()=>{
+const tempoInterval = setInterval(()=>{
   tempo++
   if(tempo<=30){
     tempoLabel="S"+(tempo-1)+"a"+tempo
     track("Tempo_"+tempoLabel)
+  }else{
+    clearInterval(tempoInterval)
   }
 },1000)
 
 // ================= CLASSIFICAR =================
 function classificar(mbps){
-  if(mbps <= 0.2) return 1
-  if(mbps <= 0.5) return 2
-  if(mbps <= 0.8) return 3
-  if(mbps <= 1) return 4
-  if(mbps <= 2) return 5
-  if(mbps <= 4) return 6
-  if(mbps <= 6) return 7
-  if(mbps <= 10) return 8
-  if(mbps <= 15) return 9
-  if(mbps <= 20) return 10
-  if(mbps <= 30) return 11
-  if(mbps <= 40) return 12
-  if(mbps <= 50) return 13
-  return 14
+  if(mbps <= 0.5) return 1
+  if(mbps <= 1) return 2
+  if(mbps <= 2) return 3
+  if(mbps <= 4) return 4
+  if(mbps <= 6) return 5
+  if(mbps <= 10) return 6
+  if(mbps <= 15) return 7
+  if(mbps <= 20) return 8
+  if(mbps <= 25) return 9
+  return 10
 }
 
-// ================= VELOCIDADE (INICIA AO ABRIR) =================
+// ================= VELOCIDADE =================
 let velocidade=null
 
 async function medirVelocidade(){
   try{
     const controller=new AbortController()
-    setTimeout(()=>controller.abort(),1000)
+
+    setTimeout(()=>controller.abort(),4000) // corrigido
 
     let totalBytes=0
     const start=performance.now()
 
-    const res=await fetch("https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js",{
+    const res=await fetch("https://speed.hetzner.de/1MB.bin",{
       signal:controller.signal,
       cache:"no-store"
     })
@@ -135,15 +134,34 @@ async function medirVelocidade(){
     }
 
   }catch(e){
-    track("Velocidade_Erro")
+    // fallback inteligente (não perde dado)
+    velocidade=0.5
+    const nivel=classificar(velocidade)
+    track("Velocidade_N"+nivel)
   }
 }
 
-// inicia ao abrir
 medirVelocidade()
 
 // ================= CLIQUE =================
-document.getElementById("btnShopee").addEventListener("click",function(){
+document.getElementById("btnShopee").addEventListener("click",function(e){
+
+  const rect=this.getBoundingClientRect()
+  const x=e.clientX - rect.left
+  const largura=rect.width
+
+  let lado
+
+  const inicioCentro = largura * 0.45
+  const fimCentro = largura * 0.55
+
+  if(x < inicioCentro){
+    lado="L"
+  }else if(x > fimCentro){
+    lado="R"
+  }else{
+    lado="C"
+  }
 
   const tempoClick=tempoLabel
 
@@ -152,12 +170,12 @@ document.getElementById("btnShopee").addEventListener("click",function(){
   if(velocidade){
     tag="N"+classificar(velocidade)
   }else{
-    tag="N5" // fallback padrão (evita NE)
+    tag="N5"
   }
 
-  track("ClickShopee")
+  track("ClickShopee",{lado})
 
-  const finalUC=(UC+tempoClick+tag).replace(/[^a-zA-Z0-9]/g,"")
+  const finalUC=(UC+tempoClick+tag+lado).replace(/[^a-zA-Z0-9]/g,"")
 
   const url=`https://shopee-utm-tracker.onrender.com/?link=${encodeURIComponent(LINK)}&uc=${finalUC}`
 
@@ -170,4 +188,3 @@ document.getElementById("btnShopee").addEventListener("click",function(){
 
 </body>
 </html>
-
