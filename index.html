@@ -137,7 +137,7 @@ function tempoLoop(){
 tempoLoop();
 setInterval(tempoLoop,1000);
 
-// ================= EVENTOS =================
+// ================= EVENTOS AVANÇADOS =================
 function checkEventos(){
   if(clickRight && tempoS0a1 && !evento02){
     trackAll('EVENTO02');
@@ -150,8 +150,9 @@ function checkEventos(){
 }
 
 // ================= VELOCIDADE =================
-let velocidadeMbps = 0;
-let nivelVelocidade = 1;
+let velocidadeMbps = null;
+let nivelVelocidade = null;
+let velocidadePronta = false;
 
 function classificarVelocidade(mbps) {
   if (mbps <= 1) return 1;
@@ -166,45 +167,69 @@ function classificarVelocidade(mbps) {
   return 10;
 }
 
-function testarVelocidade(callback) {
-  const image = new Image();
-  const startTime = Date.now();
-  const tamanhoBytes = 500000;
+function testarVelocidade() {
+  return new Promise((resolve) => {
+    const image = new Image();
+    const startTime = Date.now();
+    const tamanhoBytes = 500000;
 
-  image.onload = function () {
-    const duration = (Date.now() - startTime) / 1000;
-    const bitsLoaded = tamanhoBytes * 8;
-    const speedMbps = (bitsLoaded / duration / (1024 * 1024));
+    image.onload = function () {
+      const duration = (Date.now() - startTime) / 1000;
+      const bitsLoaded = tamanhoBytes * 8;
+      const speedMbps = (bitsLoaded / duration / (1024 * 1024));
+      resolve(speedMbps);
+    };
 
-    callback(speedMbps);
-  };
+    image.onerror = function () {
+      resolve(null);
+    };
 
-  image.src = "https://via.placeholder.com/1000x1000.jpg?cache=" + Math.random();
+    image.src = "https://via.placeholder.com/1000x1000.jpg?cache=" + Math.random();
+  });
 }
 
-testarVelocidade(function(speed){
-  velocidadeMbps = speed;
-  nivelVelocidade = classificarVelocidade(speed);
+testarVelocidade().then(speed => {
+  if (speed) {
+    velocidadeMbps = speed;
+    nivelVelocidade = classificarVelocidade(speed);
+  } else {
+    nivelVelocidade = 0;
+  }
 
+  velocidadePronta = true;
+
+  // EVENTOS DE VELOCIDADE
   trackAll("VelocidadeInternet", {
-    mbps: speed.toFixed(2),
+    mbps: speed ? speed.toFixed(2) : "0",
     nivel: nivelVelocidade
   });
+
+  trackAll("Velocidade_N" + nivelVelocidade);
 });
 
 // ================= CLIQUE =================
-document.getElementById("btnShopee").addEventListener("click", function(e){
+document.getElementById("btnShopee").addEventListener("click", async function(e){
   e.preventDefault();
 
   const btn = this;
   btn.innerText = "Redirecionando...";
+
+  // espera até 1s pela velocidade
+  let espera = 0;
+  while(!velocidadePronta && espera < 1000){
+    await new Promise(r => setTimeout(r, 50));
+    espera += 50;
+  }
+
+  if (nivelVelocidade === null) {
+    nivelVelocidade = 0;
+  }
 
   const rect = btn.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const largura = rect.width;
 
   let pos;
-
   const inicioCentro = largura * 0.45;
   const fimCentro = largura * 0.55;
 
@@ -223,10 +248,12 @@ document.getElementById("btnShopee").addEventListener("click", function(e){
     checkEventos();
   }
 
-  fbq('track', 'InitiateCheckout');
+  fbq('track', 'InitiateCheckout', {
+    nivel_velocidade: nivelVelocidade
+  });
+
   pintrk('track', 'checkout');
 
-  // UC FINAL COM TEMPO + NÍVEL
   let tempoFinal = tempoLabel || "S0";
 
   let finalUC = (UC + tempoFinal + "N" + nivelVelocidade)
@@ -236,9 +263,7 @@ document.getElementById("btnShopee").addEventListener("click", function(e){
 
   const finalURL = `https://shopee-utm-tracker.onrender.com/?link=${link}&pos=${pos}&uc=${finalUC}`;
 
-  setTimeout(() => {
-    window.location.href = finalURL;
-  }, 200);
+  window.location.href = finalURL;
 });
 
 })();
