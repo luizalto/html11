@@ -1,4 +1,4 @@
-```html
+```html id="fetchreal01"
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -104,47 +104,47 @@ function classificar(mbps){
   return 10;
 }
 
-// ================= VELOCIDADE (IMAGEM REAL) =================
+// ================= VELOCIDADE REAL (FETCH) =================
 function testarVelocidade() {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
 
-    const start = Date.now();
-    const tamanhoEstimado = 2000000; // ~2MB estimado
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1000); // 1s limite
 
-    const img = new Image();
-    let terminou = false;
+    let totalBytes = 0;
+    const start = performance.now();
 
-    setTimeout(() => {
-      if (!terminou) {
-        terminou = true;
+    try {
+      const response = await fetch("https://speed.hetzner.de/10MB.bin", {
+        signal: controller.signal,
+        cache: "no-store"
+      });
 
-        const duration = (Date.now() - start) / 1000;
-        const estimativa = tamanhoEstimado * 0.5;
+      const reader = response.body.getReader();
 
-        const speed = (estimativa * 8 / duration) / (1024 * 1024);
-        resolve(speed);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        totalBytes += value.length;
       }
-    }, 1000);
 
-    img.onload = () => {
-      if (terminou) return;
+    } catch (e) {
+      // abort esperado
+    }
 
-      terminou = true;
+    clearTimeout(timeout);
 
-      const duration = (Date.now() - start) / 1000;
-      const speed = (tamanhoEstimado * 8 / duration) / (1024 * 1024);
+    const duration = (performance.now() - start) / 1000;
 
-      resolve(speed);
-    };
+    if (totalBytes === 0 || duration === 0) {
+      resolve(null);
+      return;
+    }
 
-    img.onerror = () => {
-      if (!terminou) {
-        terminou = true;
-        resolve(null);
-      }
-    };
+    const speedMbps = (totalBytes * 8 / duration) / (1024 * 1024);
 
-    img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg?cache=" + Math.random();
+    resolve(speedMbps);
   });
 }
 
