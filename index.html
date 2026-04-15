@@ -56,7 +56,7 @@ function track(event, data={}){
   fbq('trackCustom', event, data);
 }
 
-// PARAMETROS
+// ================= PARAMETROS =================
 const params = new URLSearchParams(window.location.search);
 
 let LINK = null;
@@ -78,7 +78,7 @@ if (!LINK || !UC) {
   throw new Error("Parâmetros inválidos");
 }
 
-// TEMPO
+// ================= TEMPO =================
 let tempo = 0;
 let tempoLabel = "S0";
 
@@ -90,24 +90,7 @@ setInterval(()=>{
   }
 },1000);
 
-// VELOCIDADE (INICIA AUTOMÁTICO)
-let velocidadePromise = new Promise((resolve)=>{
-  const start = Date.now();
-  const img = new Image();
-  const size = 2000000;
-
-  img.onload = ()=>{
-    const duration = (Date.now()-start)/1000;
-    const speed = (size*8/duration)/(1024*1024);
-    resolve(speed);
-  };
-
-  img.onerror = ()=> resolve(null);
-
-  img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg?"+Math.random();
-});
-
-// CLASSIFICAR
+// ================= CLASSIFICAR =================
 function classificar(mbps){
   if (mbps <= 1) return 1;
   if (mbps <= 2) return 2;
@@ -121,7 +104,58 @@ function classificar(mbps){
   return 10;
 }
 
-// CLIQUE
+// ================= VELOCIDADE (5MB + 1s) =================
+function testarVelocidade() {
+  return new Promise((resolve) => {
+
+    const start = Date.now();
+    const tamanhoTotal = 5000000; // 5MB
+
+    const img = new Image();
+    let terminou = false;
+
+    // timeout de 1 segundo
+    setTimeout(() => {
+      if (!terminou) {
+        terminou = true;
+
+        const duration = (Date.now() - start) / 1000;
+
+        // estimativa parcial (~50%)
+        const estimativa = tamanhoTotal * 0.5;
+
+        const speed = (estimativa * 8 / duration) / (1024 * 1024);
+
+        resolve(speed);
+      }
+    }, 1000);
+
+    img.onload = () => {
+      if (terminou) return;
+
+      terminou = true;
+
+      const duration = (Date.now() - start) / 1000;
+      const speed = (tamanhoTotal * 8 / duration) / (1024 * 1024);
+
+      resolve(speed);
+    };
+
+    img.onerror = () => {
+      if (!terminou) {
+        terminou = true;
+        resolve(null);
+      }
+    };
+
+    img.src = "https://speed.hetzner.de/5MB.bin?cache=" + Math.random();
+  });
+}
+
+// inicia ao carregar
+let velocidadePromise = testarVelocidade();
+
+// ================= CLIQUE =================
 document.getElementById("btnShopee").addEventListener("click", async function(e){
   e.preventDefault();
 
@@ -129,7 +163,6 @@ document.getElementById("btnShopee").addEventListener("click", async function(e)
 
   let tempoClick = tempoLabel;
 
-  // AGORA SEMPRE ESPERA A VELOCIDADE
   let speed = await velocidadePromise;
 
   let tagVelocidade;
