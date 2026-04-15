@@ -73,7 +73,7 @@ if(!LINK||!UC){
 // ================= TEMPO =================
 let tempo=0,tempoLabel="S0"
 
-const tempoInterval = setInterval(()=>{
+const tempoInterval=setInterval(()=>{
   tempo++
   if(tempo<=30){
     tempoLabel="S"+(tempo-1)+"a"+tempo
@@ -86,30 +86,33 @@ const tempoInterval = setInterval(()=>{
 // ================= CLASSIFICAR =================
 function classificar(mbps){
   if(mbps <= 0.5) return 1
-  if(mbps <= 1) return 2
-  if(mbps <= 2) return 3
-  if(mbps <= 4) return 4
-  if(mbps <= 6) return 5
-  if(mbps <= 10) return 6
-  if(mbps <= 15) return 7
-  if(mbps <= 20) return 8
-  if(mbps <= 25) return 9
-  return 10
+  if(mbps <= 0.8) return 2
+  if(mbps <= 1) return 3
+  if(mbps <= 2) return 4
+  if(mbps <= 4) return 5
+  if(mbps <= 6) return 6
+  if(mbps <= 10) return 7
+  if(mbps <= 15) return 8
+  if(mbps <= 20) return 9
+  if(mbps <= 30) return 11
+  if(mbps <= 40) return 12
+  if(mbps <= 50) return 13
+  if(mbps <= 60) return 14
+  return 15
 }
 
-// ================= VELOCIDADE =================
+// ================= VELOCIDADE (ORIGINAL) =================
 let velocidade=null
 
 async function medirVelocidade(){
   try{
     const controller=new AbortController()
-
-    setTimeout(()=>controller.abort(),4000) // corrigido
+    setTimeout(()=>controller.abort(),1000) // ORIGINAL
 
     let totalBytes=0
     const start=performance.now()
 
-    const res=await fetch("https://speed.hetzner.de/1MB.bin",{
+    const res=await fetch("https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js",{
       signal:controller.signal,
       cache:"no-store"
     })
@@ -134,10 +137,7 @@ async function medirVelocidade(){
     }
 
   }catch(e){
-    // fallback inteligente (não perde dado)
-    velocidade=0.5
-    const nivel=classificar(velocidade)
-    track("Velocidade_N"+nivel)
+    track("Velocidade_Erro")
   }
 }
 
@@ -152,8 +152,8 @@ document.getElementById("btnShopee").addEventListener("click",function(e){
 
   let lado
 
-  const inicioCentro = largura * 0.45
-  const fimCentro = largura * 0.55
+  const inicioCentro=largura*0.45
+  const fimCentro=largura*0.55
 
   if(x < inicioCentro){
     lado="L"
