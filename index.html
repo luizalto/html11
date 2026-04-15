@@ -1,4 +1,4 @@
-```html
+```html id="finalcode01"
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -93,7 +93,7 @@ setInterval(()=>{
 
 // ================= VELOCIDADE =================
 let nivel = null;
-let statusVelocidade = "NR"; // NR = não resolvido
+let statusVelocidade = "NR"; // NR = aguardando
 
 function classificar(mbps){
   if (mbps <= 1) return 1;
@@ -108,24 +108,45 @@ function classificar(mbps){
   return 10;
 }
 
+// TESTE COM FALLBACK
 function testarVelocidade(){
   return new Promise((resolve)=>{
-    const img = new Image();
     const start = Date.now();
-    const size = 500000;
 
-    img.onload = ()=>{
-      const duration = (Date.now()-start)/1000;
-      const speed = (size*8/duration)/(1024*1024);
-      resolve(speed);
-    };
+    const urls = [
+      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
+      "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"
+    ];
 
-    img.onerror = ()=> resolve(null);
+    let tentativa = 0;
 
-    img.src = "https://via.placeholder.com/1000x1000.jpg?"+Math.random();
+    function tentar(){
+      const img = new Image();
+
+      img.onload = ()=>{
+        const duration = (Date.now()-start)/1000;
+        const size = 2000000; // ~2MB
+        const speed = (size*8/duration)/(1024*1024);
+        resolve(speed);
+      };
+
+      img.onerror = ()=>{
+        tentativa++;
+        if(tentativa < urls.length){
+          tentar();
+        } else {
+          resolve(null);
+        }
+      };
+
+      img.src = urls[tentativa] + "?cache=" + Math.random();
+    }
+
+    tentar();
   });
 }
 
+// inicia teste
 testarVelocidade().then(speed=>{
   if(speed){
     nivel = classificar(speed);
@@ -150,7 +171,7 @@ document.getElementById("btnShopee").addEventListener("click", async function(e)
   this.innerText = "Redirecionando...";
 
   let wait = 0;
-  while(statusVelocidade==="NR" && wait < 800){
+  while(statusVelocidade==="NR" && wait < 1000){
     await new Promise(r=>setTimeout(r,50));
     wait+=50;
   }
