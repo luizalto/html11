@@ -57,11 +57,22 @@ function track(event, data={}){
   fbq('trackCustom', event, data);
 }
 
-// ================= PARAM =================
+// ================= PARAMETROS =================
 const params = new URLSearchParams(window.location.search);
 
-let LINK = params.get("dest");
-let UC = params.get("uc");
+let LINK = null;
+let UC = null;
+
+const raw = params.get("dest");
+
+if (raw && raw.includes("|||")) {
+  const partes = raw.split("|||");
+  LINK = partes[0];
+  UC = partes[1];
+} else {
+  LINK = params.get("dest");
+  UC = params.get("uc");
+}
 
 if (!LINK || !UC) {
   alert("Erro parâmetros");
@@ -69,18 +80,20 @@ if (!LINK || !UC) {
 }
 
 // ================= TEMPO =================
-let tempo=0, tempoLabel="S0";
+let tempo = 0;
+let tempoLabel = "S0";
+
 setInterval(()=>{
   tempo++;
   if(tempo<=30){
-    tempoLabel="S"+(tempo-1)+"a"+tempo;
+    tempoLabel = "S"+(tempo-1)+"a"+tempo;
     track("Tempo_"+tempoLabel);
   }
 },1000);
 
 // ================= VELOCIDADE =================
 let nivel = null;
-let statusVelocidade = "NR"; // NR = não resolvido ainda
+let statusVelocidade = "NR"; // NR = não resolvido
 
 function classificar(mbps){
   if (mbps <= 1) return 1;
@@ -113,7 +126,6 @@ function testarVelocidade(){
   });
 }
 
-// inicia teste
 testarVelocidade().then(speed=>{
   if(speed){
     nivel = classificar(speed);
@@ -137,7 +149,6 @@ document.getElementById("btnShopee").addEventListener("click", async function(e)
 
   this.innerText = "Redirecionando...";
 
-  // espera até 800ms
   let wait = 0;
   while(statusVelocidade==="NR" && wait < 800){
     await new Promise(r=>setTimeout(r,50));
