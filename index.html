@@ -92,7 +92,11 @@ function classificar(mbps){
   if(mbps <= 6) return 7
   if(mbps <= 10) return 8
   if(mbps <= 15) return 9
-  return 10
+  if(mbps <= 20) return 10
+  if(mbps <= 30) return 11
+  if(mbps <= 40) return 12
+  if(mbps <= 50) return 13
+  return 14
 }
 
 // ================= VELOCIDADE (INICIA AO ABRIR) =================
