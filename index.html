@@ -21,22 +21,22 @@ fbq('track', 'PageView');
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
-  margin: 0;
-  height: 100vh;
-  background: #E74B2E;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+body{
+  margin:0;
+  height:100vh;
+  background:#E74B2E;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
-.botao {
-  background: white;
-  color: #E74B2E;
-  padding: 20px 60px;
-  font-size: 26px;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
+.botao{
+  background:#fff;
+  color:#E74B2E;
+  padding:20px 60px;
+  font-size:26px;
+  border-radius:12px;
+  font-weight:bold;
+  cursor:pointer;
 }
 </style>
 
@@ -71,7 +71,7 @@ if(!LINK||!UC){
   throw new Error()
 }
 
-// TEMPO
+// ================= TEMPO =================
 let tempo=0,tempoLabel="S0"
 
 setInterval(()=>{
@@ -82,7 +82,7 @@ setInterval(()=>{
   }
 },1000)
 
-// CLASSIFICAR
+// ================= CLASSIFICAR =================
 function classificar(mbps){
   if(mbps<=1)return 1
   if(mbps<=2)return 2
@@ -96,13 +96,11 @@ function classificar(mbps){
   return 10
 }
 
-// ================= VELOCIDADE INDEPENDENTE =================
+// ================= VELOCIDADE (INICIA AO ABRIR) =================
 let velocidade=null
 
 async function medirVelocidade(){
-
   try{
-
     const controller=new AbortController()
     setTimeout(()=>controller.abort(),1000)
 
@@ -138,11 +136,11 @@ async function medirVelocidade(){
   }
 }
 
-// DISPARA IMEDIATO AO ENTRAR
+// inicia ao abrir
 medirVelocidade()
 
-// CLIQUE
-document.getElementById("btnShopee").addEventListener("click", function(){
+// ================= CLIQUE =================
+document.getElementById("btnShopee").addEventListener("click",function(){
 
   const tempoClick=tempoLabel
 
@@ -151,7 +149,7 @@ document.getElementById("btnShopee").addEventListener("click", function(){
   if(velocidade){
     tag="N"+classificar(velocidade)
   }else{
-    tag="N5" // fallback inteligente
+    tag="N5" // fallback padrão (evita NE)
   }
 
   track("ClickShopee")
