@@ -104,7 +104,7 @@ function classificar(mbps){
   return 10;
 }
 
-// ================= VELOCIDADE (IMAGEM GRANDE + 1s) =================
+// ================= VELOCIDADE (IMAGEM REAL) =================
 function testarVelocidade() {
   return new Promise((resolve) => {
 
@@ -114,18 +114,14 @@ function testarVelocidade() {
     const img = new Image();
     let terminou = false;
 
-    // timeout de 1 segundo
     setTimeout(() => {
       if (!terminou) {
         terminou = true;
 
         const duration = (Date.now() - start) / 1000;
+        const estimativa = tamanhoEstimado * 0.5;
 
-        // assume ~50% carregado
-        const parcial = tamanhoEstimado * 0.5;
-
-        const speed = (parcial * 8 / duration) / (1024 * 1024);
-
+        const speed = (estimativa * 8 / duration) / (1024 * 1024);
         resolve(speed);
       }
     }, 1000);
@@ -136,7 +132,6 @@ function testarVelocidade() {
       terminou = true;
 
       const duration = (Date.now() - start) / 1000;
-
       const speed = (tamanhoEstimado * 8 / duration) / (1024 * 1024);
 
       resolve(speed);
