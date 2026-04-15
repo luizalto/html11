@@ -1,4 +1,4 @@
-```html id="finalcode01"
+```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -52,12 +52,11 @@ body {
 <script>
 (function(){
 
-// ================= TRACK =================
 function track(event, data={}){
   fbq('trackCustom', event, data);
 }
 
-// ================= PARAMETROS =================
+// PARAMETROS
 const params = new URLSearchParams(window.location.search);
 
 let LINK = null;
@@ -79,7 +78,7 @@ if (!LINK || !UC) {
   throw new Error("Parâmetros inválidos");
 }
 
-// ================= TEMPO =================
+// TEMPO
 let tempo = 0;
 let tempoLabel = "S0";
 
@@ -91,9 +90,8 @@ setInterval(()=>{
   }
 },1000);
 
-// ================= VELOCIDADE =================
+// VELOCIDADE
 let nivel = null;
-let statusVelocidade = "NR"; // NR = aguardando
 
 function classificar(mbps){
   if (mbps <= 1) return 1;
@@ -108,49 +106,39 @@ function classificar(mbps){
   return 10;
 }
 
-// TESTE COM FALLBACK
-function testarVelocidade(){
-  return new Promise((resolve)=>{
-    const start = Date.now();
+let velocidadePromise = new Promise((resolve)=>{
+  const start = Date.now();
+  const img = new Image();
+  const size = 2000000;
 
-    const urls = [
-      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
-      "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d"
-    ];
+  img.onload = ()=>{
+    const duration = (Date.now()-start)/1000;
+    const speed = (size*8/duration)/(1024*1024);
+    resolve(speed);
+  };
 
-    let tentativa = 0;
+  img.onerror = ()=> resolve(null);
 
-    function tentar(){
-      const img = new Image();
+  img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg?"+Math.random();
+});
 
-      img.onload = ()=>{
-        const duration = (Date.now()-start)/1000;
-        const size = 2000000; // ~2MB
-        const speed = (size*8/duration)/(1024*1024);
-        resolve(speed);
-      };
+// CLIQUE
+document.getElementById("btnShopee").addEventListener("click", async function(e){
+  e.preventDefault();
 
-      img.onerror = ()=>{
-        tentativa++;
-        if(tentativa < urls.length){
-          tentar();
-        } else {
-          resolve(null);
-        }
-      };
+  this.innerText = "Carregando...";
 
-      img.src = urls[tentativa] + "?cache=" + Math.random();
-    }
+  // SALVA TEMPO IMEDIATO
+  let tempoClick = tempoLabel;
 
-    tentar();
-  });
-}
+  // ESPERA VELOCIDADE TERMINAR (OBRIGATÓRIO)
+  let speed = await velocidadePromise;
 
-// inicia teste
-testarVelocidade().then(speed=>{
+  let tagVelocidade;
+
   if(speed){
     nivel = classificar(speed);
-    statusVelocidade = "OK";
+    tagVelocidade = "N"+nivel;
 
     track("Velocidade_N"+nivel);
     track("VelocidadeInternet", {
@@ -159,39 +147,13 @@ testarVelocidade().then(speed=>{
     });
 
   } else {
-    statusVelocidade = "ERRO";
-    track("Velocidade_Erro");
-  }
-});
-
-// ================= CLIQUE =================
-document.getElementById("btnShopee").addEventListener("click", async function(e){
-  e.preventDefault();
-
-  this.innerText = "Redirecionando...";
-
-  let wait = 0;
-  while(statusVelocidade==="NR" && wait < 1000){
-    await new Promise(r=>setTimeout(r,50));
-    wait+=50;
-  }
-
-  let tagVelocidade;
-
-  if(statusVelocidade==="OK"){
-    tagVelocidade = "N"+nivel;
-  } 
-  else if(statusVelocidade==="ERRO"){
     tagVelocidade = "NE";
-  } 
-  else {
-    tagVelocidade = "NR";
-    track("Velocidade_Rapido");
+    track("Velocidade_Erro");
   }
 
   track("ClickShopee");
 
-  let finalUC = (UC + tempoLabel + tagVelocidade)
+  let finalUC = (UC + tempoClick + tagVelocidade)
     .replace(/[^a-zA-Z0-9]/g,"");
 
   let finalURL = `https://shopee-utm-tracker.onrender.com/?link=${encodeURIComponent(LINK)}&uc=${finalUC}`;
