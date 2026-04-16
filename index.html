@@ -101,8 +101,7 @@ function classificar(mbps){
   return 15
 }
 
-
-// ================= VELOCIDADE (ORIGINAL) =================
+// ================= VELOCIDADE =================
 let velocidade=null
 
 async function medirVelocidade(){
@@ -178,6 +177,14 @@ document.getElementById("btnShopee").addEventListener("click",function(e){
     fbq('trackCustom','ClickShopee_Right')
   }
 
+  // 🔥 EVENTO NOVO (Right + tempo entre 2 e 6s)
+  if(pos === "Right" && tempo >= 2 && tempo <= 6){
+    fbq('trackCustom', 'ClickRight_Tempo2a6', {
+      tempo: tempoLabel,
+      segundos: tempo
+    });
+  }
+
   const tempoClick=tempoLabel
 
   let tag
@@ -189,7 +196,6 @@ document.getElementById("btnShopee").addEventListener("click",function(e){
 
   const lado = pos === "Left" ? "L" : pos === "Right" ? "R" : "C"
 
-  // 🔥 UC FINAL NO FORMATO CORRETO
   const baseUC = UC.replace(/[^a-zA-Z0-9]/g,"")
 
   const finalUC = (
