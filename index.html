@@ -12,8 +12,35 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)
 }(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
 
-fbq('init', '799819532599997');
-fbq('track', 'PageView');
+// ================= USER ID =================
+function gerarId(){
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let id = ''
+  for(let i=0;i<13;i++){
+    id += chars.charAt(Math.floor(Math.random()*chars.length))
+  }
+  return id
+}
+
+function getUserId(){
+  let id = localStorage.getItem('user_id')
+  if(!id){
+    id = gerarId()
+    localStorage.setItem('user_id', id)
+  }
+  return id
+}
+
+const userId = getUserId()
+
+// INIT COM EXTERNAL ID
+fbq('init', '799819532599997', {
+  external_id: userId
+});
+
+fbq('track', 'PageView', {
+  external_id: userId
+});
 </script>
 
 <meta charset="UTF-8">
@@ -48,7 +75,13 @@ body{
 <script>
 (function(){
 
-function track(e,d={}){fbq('trackCustom',e,d)}
+// TRACK GLOBAL COM EXTERNAL ID
+function track(e,d={}){
+  fbq('trackCustom', e, {
+    ...d,
+    external_id: userId
+  })
+}
 
 const params=new URLSearchParams(window.location.search)
 
@@ -166,20 +199,18 @@ document.getElementById("btnShopee").addEventListener("click",function(e){
     pos="Center"
   }
 
-  // EVENTOS PIXEL
-  fbq('trackCustom','ClickShopee',{position:pos})
+  track('ClickShopee',{position:pos})
 
   if(pos==="Left"){
-    fbq('trackCustom','ClickShopee_Left')
+    track('ClickShopee_Left')
   }else if(pos==="Center"){
-    fbq('trackCustom','ClickShopee_Center')
+    track('ClickShopee_Center')
   }else{
-    fbq('trackCustom','ClickShopee_Right')
+    track('ClickShopee_Right')
   }
 
-  // 🔥 EVENTO NOVO (Right + tempo entre 2 e 6s)
   if(pos === "Right" && tempo >= 2 && tempo <= 6){
-    fbq('trackCustom', 'ClickRight_Tempo2a6', {
+    track('ClickRight_Tempo2a6', {
       tempo: tempoLabel,
       segundos: tempo
     });
